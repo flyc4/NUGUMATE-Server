@@ -204,13 +204,32 @@ const Save_Diary = async function(req, res) {
           Date: paramDate, 
           Contents: paramContents
         });  
-       database.collection('diaries').updateOne({Date: newdiary.Date, UserId: newdiary.UserId}
-        ,newdiary,{upsert: true},function(err){
+       database.collection('diaries').findOneAndUpdate({Date: newdiary.Date, UserId: newdiary.UserId}
+        ,newdiary,{upsert: true}, async function(err, diary){
         if(err){
           console.log("Diary/Save_Diary에서 일기 저장 중 에러 발생: " + err.stack) 
           res.end(); 
           return;
-        } 
+        }   
+        Update_After_Insert = async () => {
+          let url = process.env.model_url + '/Get_Diary'; 
+          //console.log("_id: ", diary.value._id); 
+          console.log("Contents: ", diary.value.Contents);
+              await axios.post(url,{ 
+                _id: diary.value._id, 
+                Contents: diary.value.Contents
+              })
+              .then((response) => {     
+                console.log("Model Server에 데이터 전송 완료");
+                  return;
+              })
+              .catch(( err ) => {                       
+                  console.log("Update_After_Insert 중 에러 발생: " + err.stack)  
+                  return;
+              });    
+          };    
+          await Update_After_Insert(); 
+
         res.json({"msg": "completed"});  
         res.end();
         return;  

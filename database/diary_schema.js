@@ -12,7 +12,7 @@ Schema.createSchema = function(mongoose) {
 		Sentiment_Analysis: {type: Number, default: -1},  
 
     });
-		
+	/*	
 	DiarySchema.pre('save', function(next) {
 		if (!this.isNew) return next();
 	});
@@ -24,7 +24,8 @@ Schema.createSchema = function(mongoose) {
 				self.save(callback);
 			});
 		} 
-	}; 
+	};  
+	*/
 	console.log('DiarySchema 정의함.');
 	
 	return DiarySchema;  
