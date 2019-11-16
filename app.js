@@ -57,14 +57,15 @@ userPassport(router, passport);
 
 //===== 서버 시작 =====//  
 const client = new MongoClient(process.env.db_url, {
-	useNewUrlParser: true,
+	useNewUrlParser: true, 
+	useUnifiedTopology: true
   }); 
 
   let databases
 
   const createConn = async () => {
 	await client.connect();
-	databases = client.db('db');  
+	databases = client.db('database');  
   }; 
   
   const connection = async function(){  

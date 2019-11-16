@@ -14,8 +14,15 @@ module.exports = {
         ],
 	route_info: [
         //user 혹은 인증과 관련된 패스들
-         {file:'./user', path:'/process/user/checknickNm', method:'checknickNm', type:'post'} 
-        ,{file:'./user', path:'/process/user/getuserid', method:'getuserid', type:'post'}
+         {file:'./user', path:'/user/checknickNm', method:'checknickNm', type:'post'} 
+        ,{file:'./user', path:'/user/getuserid', method:'getuserid', type:'post'}
+        
+        //diary 관련 패스들
+        ,{file:'./diary', path:'/Diary/Search_Monthly_Diary', method:'Search_Monthly_Diary', type:'post'}
+        ,{file:'./diary', path:'/Diary/Search_Daily_Diary', method:'Search_Daily_Diary', type:'post'}
+        ,{file:'./diary', path:'/Diary/Save_Diary', method:'Save_Diary', type:'post'}
+        ,{file:'./diary', path:'/Diary/Delete_Diary', method:'Delete_Diary', type:'post'} 
+        
 ],      
 };  
 
