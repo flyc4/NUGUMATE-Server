@@ -1,7 +1,7 @@
 // Express 기본 모듈 불러오기
 let express = require('express')
   , http = require('http')
-const serverless = require('serverless-http');
+const serverless = require('serverless-http'); 
 
 // Express의 미들웨어 불러오기. (이거 없으면 let a = req.body.~id 이런 식으로 데이터 받기 불가능)
 var bodyParser = require('body-parser')
@@ -40,7 +40,10 @@ app.use(bodyParser.json())
 // Passport의 세션을 사용할 때는 그 전에 Express의 세션을 사용하는 코드가 있어야 함
 app.use(passport.initialize());
 app.use(passport.session()); 
-app.use(flash());
+app.use(flash()); 
+
+//nodejs에서 put 과 delete 사용: http://blog.naver.com/PostView.nhn?blogId=jdub7138&logNo=221049375308&categoryNo=136&parentCategoryNo=0&viewDate=&currentPage=1&postListTopCurrentPage=1&from=postView
+
 
 //라우팅 정보를 읽어들여 라우팅 설정
 var router = express.Router();

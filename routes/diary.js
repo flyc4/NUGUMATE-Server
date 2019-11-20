@@ -38,12 +38,12 @@ const Search_Monthly_Diary = async function(req, res) {
   await connection()  
        
   let currentyear = new Date().getFullYear(); 
-  let currentmonth = new Date().getMonth();
+  let currentmonth = new Date().getMonth() + 1;
 
   //사용자 입력 값
-  const paramUserId = req.body.userid;
-  const paramYear = req.body.year||currentyear; 
-  const paramMonth = req.body.month||currentmonth; 
+  const paramUserId = req.query.userid;
+  const paramYear = req.query.year||currentyear; 
+  const paramMonth = req.query.month||currentmonth; 
   
   //입력 받은 paramYear 과 parmaMonth 를 기준으로 조회 시작/끝 날짜를 설정
   const startdate = paramYear + "-" + paramMonth + "-" + "01";  
@@ -69,10 +69,11 @@ const Search_Monthly_Diary = async function(req, res) {
           console.log("Diary/Search_Monthly_Diary에서 사용자 조회 불가");
           res.json({msg: "missing"}); 
           return;
-        }
-        database.collection('diaries').find(
+        } 
+        console.log(user._id)
+        database.collection('diaries').find( 
           {
-            UserId: paramUserId, 
+            User_id: new ObjectId(user._id), 
             Date: {$gte: ISOstartdate, $lte: ISOenddate} 
           }).toArray(
           function(err,diaries){ 
@@ -114,8 +115,8 @@ const Search_Daily_Diary = async function(req, res) {
   await connection()  
        
   //사용자 입력 값
-  const paramUserId = req.body.userid;
-  const paramDate = req.body.date; 
+  const paramUserId = req.query.userid;
+  const paramDate = req.query.date; 
   const ISOparamDate = utils.GetISODate(paramDate);
   const ISOparamNextDate = utils.GetISODate(moment(ISOparamDate).add(1,'days').format('YYYY-MM-DD')); 
 
@@ -139,7 +140,7 @@ const Search_Daily_Diary = async function(req, res) {
         }
         database.collection('diaries').find(
           {
-            UserId: paramUserId, 
+            User_id: user._id, 
             Date: {$gte: ISOparamDate, $lt: ISOparamNextDate} 
           }).toArray(
           function(err,diary){ 
@@ -185,7 +186,7 @@ const Save_Diary = async function(req, res) {
 
   if (database){       
     database.collection('users').findOne({UserId: paramUserId},
-      function(err,user){
+      async function(err,user){
         if(err){
           console.log("Diary/Save_Diary에서 사용자 조회 중 에러 발생: " + err.stack) 
           res.end(); 
@@ -204,38 +205,42 @@ const Save_Diary = async function(req, res) {
           Date: paramDate, 
           Contents: paramContents
         });  
-       database.collection('diaries').findOneAndUpdate({Date: newdiary.Date, UserId: newdiary.UserId}
-        ,newdiary,{upsert: true}, async function(err, diary){
+       database.collection('diaries').findOneAndUpdate({Date: newdiary.Date, User_id: newdiary.User_id}
+        ,newdiary,{upsert: true}, async function(err){
         if(err){
           console.log("Diary/Save_Diary에서 일기 저장 중 에러 발생: " + err.stack) 
           res.end(); 
           return;
-        }   
+        }    
+        })  
         Update_After_Insert = async () => {
           let url = process.env.model_url + '/Get_Diary'; 
-          //console.log("_id: ", diary.value._id); 
-          console.log("Contents: ", diary.value.Contents);
-              await axios.post(url,{ 
-                _id: diary.value._id, 
-                Contents: diary.value.Contents
-              })
-              .then((response) => {     
-                console.log("Model Server에 데이터 전송 완료");
-                  return;
-              })
-              .catch(( err ) => {                       
-                  console.log("Update_After_Insert 중 에러 발생: " + err.stack)  
-                  return;
-              });    
-          };    
-          await Update_After_Insert(); 
+          database.collection('diaries').findOne(newdiary, async function(err,diary){ 
+            if(err){
+              console.log("Diary/Save_Diary에서 Update_After_Insert 를 위해 일기 조회 중 에러 발생: " + err.stack);  
+              res.end(); 
+              return;
+            }
+            await axios.post(url,{ 
+                  _id: diary._id, 
+                  Contents: diary.Contents
+                })
+                .then((response) => {     
+                  console.log("Model Server에 데이터 전송 완료");
+                    return;
+                })
+                .catch(( err ) => {                       
+                    console.log("Update_After_Insert 중 에러 발생: " + err.stack)  
+                    return;
+                });  
+            });//findOne 닫기   
+          }; //Update_After_Insert 닫기
 
+        await Update_After_Insert(); 
         res.json({"msg": "completed"});  
         res.end();
-        return;  
-       }); 
-       
-    });//database.UserModel.findOne 닫기  
+        return; 
+      });//database.UserModel.findOne 닫기  
 
 }//if(database) 닫기  
   else {  

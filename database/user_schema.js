@@ -13,12 +13,12 @@ Schema.createSchema = function(mongoose) {
 
 	  //혹시 모를 상황에 대비
 	  Keyword: {type: String, default: '아무개', required: true, trim: true}, // OAuth 없이 누구에서 임시 로그인 기능을 위한 속성
-      salt: {type: String}, // 로컬 로그인 구현에 대한 대비
-      hashed_password: {type: String, 'default':''},// 로컬 로그인 구현에 대한 대비    
+    //  salt: {type: String}, // 로컬 로그인 구현에 대한 대비
+    //  hashed_password: {type: String, 'default':''},// 로컬 로그인 구현에 대한 대비    
     });
     
 	// password를 virtual 메소드로 정의 : MongoDB에 저장되지 않는 가상 속성임. 
-    // 특정 속성을 지정하고 set, get 메소드를 정의함. 
+	/* 특정 속성을 지정하고 set, get 메소드를 정의함.  
 	UserSchema
 	  .virtual('password')
 	  .set(function(password) {
@@ -72,13 +72,13 @@ Schema.createSchema = function(mongoose) {
 		} else {
 			next();
 		} 
-		*/
+		
 	});
 	
         UserSchema.path('hashed_password').validate(function(hashed_password){
         return hashed_password.length;
     }, 'hashed_password 칼럼의 값이 없습니다.'); 
-    
+    */
 	//모델 객체에세 사용 가능한 메소드 정의  
 	// 모델을 위한 스키마 등록
 	mongoose.model('UserModel', UserSchema);
