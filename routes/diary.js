@@ -5,7 +5,7 @@ const utils = require('../config/utils');
 require('dotenv').config()  
 const axios = require("axios");  
 const MongoClient = require("mongodb").MongoClient;  
-const moment = require('moment')
+const moment = require('moment'); 
 
 const client = new MongoClient(process.env.db_url, {
   useNewUrlParser: true, 
@@ -30,18 +30,18 @@ const connection = async function(){
           return;
       }
   }    
-}
+};
 
 // 월간 일기 조회
 const Search_Monthly_Diary = async function(req, res) {
   console.log('Diary/Search_Monthly_Diary 호출됨.');
-  await connection()  
+  await connection();  
        
   let currentyear = new Date().getFullYear(); 
   let currentmonth = new Date().getMonth() + 1;
 
   //사용자 입력 값
-  const paramUserId = req.query.userid;
+  const paramNuguName = req.query.nuguname;
   const paramYear = req.query.year||currentyear; 
   const paramMonth = req.query.month||currentmonth; 
   
@@ -51,56 +51,36 @@ const Search_Monthly_Diary = async function(req, res) {
   const ISOstartdate = utils.GetISODate(startdate)
   const ISOenddate = utils.GetISODate(enddate)
 
-  console.log('paramUserId: ',paramUserId);
+  console.log('paramNuguName: ',paramNuguName);
   console.log('paramYear: ',paramYear);
   console.log('paramMonth: ',paramMonth); 
   console.log('ISOstartdate: ',ISOstartdate); 
   console.log('ISOenddate: ',ISOenddate); 
   
   if (database){       
-    database.collection('users').findOne({UserId: paramUserId},
-      function(err,user){
-        if(err){
-          console.log("Diary/Search_Monthly_Diary에서 사용자 조회 중 에러 발생: " + err.stack) 
-          res.end() 
-          return
-        }  
-        if(!user){
-          console.log("Diary/Search_Monthly_Diary에서 사용자 조회 불가");
-          res.json({msg: "missing"}); 
-          return;
-        } 
-        console.log(user._id)
-        database.collection('diaries').find( 
-          {
-            User_id: new ObjectId(user._id), 
-            Date: {$gte: ISOstartdate, $lte: ISOenddate} 
-          }).toArray(
-          function(err,diaries){ 
-            if(err){
-              console.log("Diary/Search_Monthly_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
-            }   
-            //조회된 일기가 없을 경우
-            if(diaries.length<=0){ 
-              console.log("No diary found");  
-              res.json({'msg': 'empty'});
-              res.end();
-              return;
-            } 
-            // 조회한 일기들을 context 변수에 저장
-            let context = { Diary: [{ Date: ' ', Contents: ' '}]}
-            diaries.forEach(function(diary){
-              context.Diary.push({
-                Date: moment(diary.Date).format('YYYY-MM-DD'),
-                Contents: diary.Contents
-              })
-            })
-            context.Diary.splice(0,1); 
-            res.json(context);
-            res.end();
-            return;
-          }); //database.DiaryModel.find 닫기
-        });//database.UserModel.findOne 닫기 
+
+  database.collection('diaries').find( 
+    {
+      NuguName: paramNuguName, 
+      Date: {$gte: ISOstartdate, $lte: ISOenddate} 
+    }).toArray(
+    function(err,diaries){ 
+      if(err){
+        console.log("Diary/Search_Monthly_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
+      }   
+      // 조회한 일기들을 context 변수에 저장
+      let context = { Diary: [{ Date: ' ', Contents: ' '}]}
+      diaries.forEach(function(diary){
+        context.Diary.push({
+          Date: moment(diary.Date).format('YYYY-MM-DD'),
+          Contents: diary.Contents
+        })
+      })
+      context.Diary.splice(0,1); 
+      res.json(context);
+      res.end();
+      return;
+    }); //database.DiaryModel.find 닫기
 }//if(database) 닫기  
   else {  
     console.log("Diary/Search_Monthly_Diary 수행 중 데이터베이스 연결 실패")
@@ -112,56 +92,42 @@ const Search_Monthly_Diary = async function(req, res) {
 // 일간 일기 조회
 const Search_Daily_Diary = async function(req, res) {
   console.log('Diary/Search_Daily_Diary 호출됨.');
-  await connection()  
+  await connection();
        
   //사용자 입력 값
-  const paramUserId = req.query.userid;
+  const paramNuguName = req.query.nuguname;
   const paramDate = req.query.date; 
   const ISOparamDate = utils.GetISODate(paramDate);
   const ISOparamNextDate = utils.GetISODate(moment(ISOparamDate).add(1,'days').format('YYYY-MM-DD')); 
 
-  console.log('paramUserId: ',paramUserId);
+  console.log('paramNuguName: ',paramNuguName);
   console.log('ISOparamDate: ',ISOparamDate);
   console.log('ISOparamNextDate: ',ISOparamNextDate);
 
   if (database){       
-    
-    database.collection('users').findOne({UserId: paramUserId},
-      function(err,user){
+    database.collection('diaries').findOne(
+      {
+        NuguName: paramNuguName, 
+        Date: {$gte: ISOparamDate, $lt: ISOparamNextDate} 
+      },
+      function(err,diary){ 
         if(err){
-          console.log("Diary/Search_Monthly_Diary에서 사용자 조회 중 에러 발생: " + err.stack) 
+          console.log("Diary/Search_Daily_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
+        }   
+        
+        //조회된 일기가 없다면 빈 객체 전송 
+        if(!diary){ 
+          res.json({Diary: " "}); 
           res.end(); 
           return;
-        }  
-        if(!user){
-          console.log("Diary/Search_Daily_Diary에서 사용자 조회 불가")  
-          res.json({msg: "missing"}); 
-          return;
         }
-        database.collection('diaries').find(
-          {
-            User_id: user._id, 
-            Date: {$gte: ISOparamDate, $lt: ISOparamNextDate} 
-          }).toArray(
-          function(err,diary){ 
-            if(err){
-              console.log("Diary/Search_Daily_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
-            }  
-            //조회된 일기가 없을 경우
-            if(diary.length<=0){ 
-              console.log("No diary found");  
-              res.json({'msg': 'empty'});
-              res.end();
-              return;
-            } 
-            // 조회한 일기를 context 변수에 저장
-            let context = { Diary: { Date: diary[0].Date, Contents: diary[0].Contents}}
-            res.json(context);
-            res.end();
-            return;
-          }); //database.DiaryModel.find 닫기
-        });//database.UserModel.findOne 닫기 
-}//if(database) 닫기  
+        // 조회한 일기를 context 변수에 저장
+        let context = { Diary: { Date: diary.Date, Contents: diary.Contents}}
+        res.json(context);
+        res.end();
+        return;
+      }); //database.DiaryModel.find 닫기 
+  }//if(database) 닫기  
   else {  
     console.log("Diary/Search_Daily_Diary 수행 중 데이터베이스 연결 실패")
     res.end(); 
@@ -172,20 +138,20 @@ const Search_Daily_Diary = async function(req, res) {
 // 일간 일기 upsert
 const Save_Diary = async function(req, res) {
   console.log('Diary/Save_Diary 호출됨.');
-  await connection()  
+  await connection();
        
   //사용자 입력 값
-  const paramUserId = req.body.userid;
-  const paramDate = req.body.date; 
-  const ISOparamDate = utils.GetISODate(paramDate); 
-  const paramContents = req.body.contents;
+  const paramNuguName = req.body.nuguname;
+  const paramDate = utils.GetISODate(req.body.date);
+  const paramContents = req.body.contents; 
+  const paramNextDate = utils.GetISODate(moment(paramDate).add(1,'days').format('YYYY-MM-DD'));
 
-  console.log('paramUserId: ',paramUserId);
-  console.log('ISOparamDate: ',ISOparamDate);
+  console.log('paramNuguName: ',paramNuguName);
+  console.log('paramDate: ',paramDate);
   console.log('paramContents: ',paramContents);
 
   if (database){       
-    database.collection('users').findOne({UserId: paramUserId},
+    database.collection('users').findOne({NuguName: paramNuguName},
       async function(err,user){
         if(err){
           console.log("Diary/Save_Diary에서 사용자 조회 중 에러 발생: " + err.stack) 
@@ -200,48 +166,25 @@ const Save_Diary = async function(req, res) {
 
         //미리 정의한 모델 불러오기 
         let db = req.app.get('database');
-        let newdiary = new db.DiaryModel({
-          User_id: user._id, 
+        let newdiary = db.DiaryModel({
+          NuguName: user.NuguName, 
           Date: paramDate, 
           Contents: paramContents
         });  
-       database.collection('diaries').findOneAndUpdate({Date: newdiary.Date, User_id: newdiary.User_id}
-        ,newdiary,{upsert: true}, async function(err){
+        
+        database.collection('diaries').findOneAndUpdate({Date: {$gte: paramDate, $lt: paramNextDate }, NuguName: newdiary.NuguName}
+          ,newdiary,{upsert: true}, async function(err){
+      
         if(err){
           console.log("Diary/Save_Diary에서 일기 저장 중 에러 발생: " + err.stack) 
           res.end(); 
-          return;
-        }    
-        })  
-        Update_After_Insert = async () => {
-          let url = process.env.model_url + '/Get_Diary'; 
-          database.collection('diaries').findOne(newdiary, async function(err,diary){ 
-            if(err){
-              console.log("Diary/Save_Diary에서 Update_After_Insert 를 위해 일기 조회 중 에러 발생: " + err.stack);  
-              res.end(); 
-              return;
-            }
-            await axios.post(url,{ 
-                  _id: diary._id, 
-                  Contents: diary.Contents
-                })
-                .then((response) => {     
-                  console.log("Model Server에 데이터 전송 완료");
-                    return;
-                })
-                .catch(( err ) => {                       
-                    console.log("Update_After_Insert 중 에러 발생: " + err.stack)  
-                    return;
-                });  
-            });//findOne 닫기   
-          }; //Update_After_Insert 닫기
-
-        await Update_After_Insert(); 
-        res.json({"msg": "completed"});  
-        res.end();
-        return; 
-      });//database.UserModel.findOne 닫기  
-
+          return; 
+        }     
+        res.json({msg: "completed"}); 
+        res.end(); 
+        return;
+        });  
+      });//database.collection(users).findOne 닫기  
 }//if(database) 닫기  
   else {  
     console.log("Diary/Search_Daily_Diary 수행 중 데이터베이스 연결 실패")
@@ -256,52 +199,38 @@ const Delete_Diary = async function(req, res) {
   await connection();  
        
   //사용자 입력 값
-  const paramUserId = req.body.userid;
-  const paramDate = req.body.date; 
-  const ISOparamDate = utils.GetISODate(paramDate);
-  const ISOparamNextDate = utils.GetISODate(moment(ISOparamDate).add(1,'days').format('YYYY-MM-DD')); 
+  const paramNuguName = req.body.nuguname;
+  const paramDate = utils.GetISODate(req.body.date); 
+  const paramNextDate = utils.GetISODate(moment(paramDate).add(1,'days').format('YYYY-MM-DD')); 
 
-  console.log('paramUserId: ',paramUserId);
-  console.log('ISOparamDate: ',ISOparamDate);
-  console.log('ISOparamNextDate: ',ISOparamNextDate);
+  console.log('paramNuguName: ',paramNuguName);
+  console.log('paramDate: ', paramDate);
+  console.log('paramNextDate: ', paramNextDate);
 
   if (database){       
     
-    database.collection('users').findOne({UserId: paramUserId},
-      function(err,user){
-        if(err){
-          console.log("Diary/Delete_Diary에서 사용자 조회 중 에러 발생: " + err.stack) 
-          res.end(); 
+      database.collection('diaries').deleteOne(
+        {
+          NuguName: paramNuguName, 
+          Date: {$gte: paramDate, $lt: paramNextDate} 
+        },
+        async function(err){ 
+          if(err){
+            console.log("Diary/Delete_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
+          }   
+          res.json({"msg": "completed"});
+          res.end();
           return;
-        }  
-        if(!user){
-          console.log("Diary/Delete_Diary에서 사용자 조회 불가")  
-          res.json({msg: "missing"}); 
-          return;
-        }
-        database.collection('diaries').deleteOne(
-          {
-            User_id: user._id, 
-            Date: {$gte: ISOparamDate, $lt: ISOparamNextDate} 
-          },
-          function(err){ 
-            if(err){
-              console.log("Diary/Delete_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
-            }  
-            res.json({"msg": "completed"});
-            res.end();
-            return;
-          }); //database.DiaryModel.find 닫기
-        });//database.UserModel.findOne 닫기 
+            }); //collection('diaries').deleteOne 닫기 
 }//if(database) 닫기  
   else {  
     console.log("Diary/Delete_Diary 수행 중 데이터베이스 연결 실패")
     res.end(); 
     return;
   }      
-};//Delete_Diary 닫기
+};//Delete_Diary 닫기 
 
 module.exports.Search_Monthly_Diary = Search_Monthly_Diary;
 module.exports.Search_Daily_Diary = Search_Daily_Diary;  
 module.exports.Save_Diary = Save_Diary;
-module.exports.Delete_Diary = Delete_Diary;
+module.exports.Delete_Diary = Delete_Diary;  

@@ -5,48 +5,34 @@ Specifications-answers for positive/negative sentiment에 해당
 _Daily: 일간 질문에 대한 대답 들 
 _Period: 주간 / 월간 질문에 대한 대답 들 
 
-'님' 글자 앞에 userid 나 keyword 붙일 예정. 
+'주인님' 글자 앞에 userid 나 keyword 붙일 예정. 
 */
 const Answers_For_Positive_Sentiment_Daily = [
-  "님이 기분이 좋은 것 같아서 저도 기분이 좋아요", 
-  "님을 보니 저도 행복해요", 
-  "님이 헹복헤보여서 저도 좋아요"
+  "주인님이 기분이 좋은 것 같아서 저도 기분이 좋아요", 
+  "주인님을 보니 저도 행복해요", 
+  "주인님이 헹복해 보여서 저도 좋아요"
  ]; 
 
 const Answers_For_Negative_Sentiment_Daily = [
-  "님이 기분이 안 좋아 보여서 걱정이 되요", 
-  "님, 잘 지내고 있는 거 맞죠? 잊지 말고 꼭 밥 먹어요", 
-  "님. 오늘 기분이 잘 안 좋아 보이지만, 잘 해낼 수 있을 거라 믿어요."
+  "기분이 안 좋아 보여서 걱정이 되요", 
+  "요즘 기운이 없어 보여서 걱정이 되요. 밥은 잘 챙겨 드시고 있죠?", 
+  "흠.. 다른 건 괜찮지만 주인님이 꽤 걱정이 되요. 저는 언제나 주인님의 고민을 듣고 싶어요/"
  ]; 
 
 const Answers_For_Positive_Sentiment_Period = [
-  "님이 요즘 잘 지내는 것 같아서 저도 기분이 좋아요", 
-  "님, 요즘 좋은 일이 많으신가 봐요. 저도 행복해요.", 
+  "요즘 잘 지내는 것 처럼 보여서 저도 기분이 좋아요", 
+  "요즘 좋은 일이 많으신가 봐요. 저도 행복해요.", 
  ]; 
 
 const Answers_For_Negative_Sentiment_Period = [
-  "님이 요즘 기분이 안 좋아 보여서 걱정이 되요", 
-  "님, 요즘 밥은 잘 드시고 있나요? 잊지 말고 꼭 밥 먹어요", 
-  "님. 요새 기분이 잘 안 좋아 보이지만, 잘 해낼 수 있을 거라 믿어요."
+  "요즘 기분이 안 좋아 보여서 걱정이 되요", 
+  "주인님 걱정이 한가득해요. 요즘 밥은 잘 드시고 있나요? 잊지 말고 꼭 밥 먹어요", 
+  "주인님 걱정이 태산이에요.. 요새 기분이 안 좋아 보이지만, 잘 해낼 수 있을 거라 믿어요."
  ]; 
  
  const Answers_For_No_Sentiment = [
-  "님을 아직 잘 모르겠어요. 앱에 일기를 적어주세요."
+  "흠.. 그냥 그랬어요. 일기를 통해서 주인님을 좀 더 알고 싶어요."
  ];
-
-//누구 스피커에서 period 파라미터로 받은 것들 중에서 daily 로 대표할 수 있는 값들 
-const Daily_Words = [
-  "오늘", "지금"
-]
-
-const Weekly_Words = [
-  "이번주", "요번주", "요즘"
-]
-
-const Monthly_Words = [
-  "이번달", "요번달"
-]
-
 
 //현재 시간을 ISO 형식으로 반환
 const timestamp = function(){         
@@ -90,11 +76,11 @@ const GenerateRandomNumber = function(min,max){
 //userid: 사용자 식별 정보. 모든 응답 앞에 붙여질 내용 
 //period: 일간, 주간/월간 대화 중 무엇인지 식별. (daily, period)
 //sentiment: 0/1/-1. 
-const Choose_Answer = function(userid,period,sentiment){
+const Choose_Answer = function(period,sentiment){
 
   //sentiment 값이 없다면 바로 return 
   if(sentiment===-1){
-    return userid + Answers_For_No_Sentiment[0];
+    return Answers_For_No_Sentiment[0];
   }  
   else{
     //일간 대화
@@ -103,12 +89,12 @@ const Choose_Answer = function(userid,period,sentiment){
       //일간 대화 & 긍정 감정
       if(sentiment >= 0.5){
         const random_number = GenerateRandomNumber(0,Answers_For_Positive_Sentiment_Daily.length-1); 
-        return userid + Answers_For_Positive_Sentiment_Daily[random_number]; 
+        return Answers_For_Positive_Sentiment_Daily[random_number]; 
       }//일간 대화 & 긍정 감정 끝 
 
       else{
         const random_number = GenerateRandomNumber(0,Answers_For_Negative_Sentiment_Daily.length-1); 
-        return userid + Answers_For_Negative_Sentiment_Daily[random_number]; 
+        return Answers_For_Negative_Sentiment_Daily[random_number]; 
       }//일간 대화 & 부정 감정 끝 
     }//if(period === "daily") 
 
@@ -116,36 +102,16 @@ const Choose_Answer = function(userid,period,sentiment){
       // 주간,월간 대화 & 긍정 감정
       if(sentiment >= 0.5){
         const random_number = GenerateRandomNumber(0,Answers_For_Positive_Sentiment_Period.length-1); 
-        return userid + Answers_For_Positive_Sentiment_Period[random_number]; 
+        return Answers_For_Positive_Sentiment_Period[random_number]; 
       }//주간,월간 대화 & 긍정 감정 끝 
 
       else{
         const random_number = GenerateRandomNumber(0,Answers_For_Negative_Sentiment_Period.length-1); 
-        return userid + Answers_For_Negative_Sentiment_Period[random_number]; 
+        return  Answers_For_Negative_Sentiment_Period[random_number]; 
       }//주간,월간 대화 & 부정 감정 끝 
     }//주간, 월간 끝
   }//sentiment != -1
 };
-
-
-//specificaton에 없음. 사용자의 발화를 daily / weekly / monthly 중 하나로 분류 
-const Determine_Period = function(period){
-
-  if(Daily_Words.find(element => element === period)){
-    return "daily";
-  }  
-  else if(Weekly_Words.find(element => element === period)){
-    return "weekly";
-  } 
-
-  else if(Monthly_Words.find(element => element === period)){
-      return "monthly";
-  }  
-  //기본 값은 daily로
-  else{
-    return "daily";
-  }
-}; 
 
 const Get_ResObj = function(){
   let resobj = {
@@ -158,6 +124,13 @@ const Get_ResObj = function(){
   return resobj;
 };
 
+const Get_First_Day_of_Current_Week = function(date){
+  
+  const day = new Date(date).getDay()*-1;
+  return moment(date).add(day,'days').format('YYYY-MM-DD');
+
+};
+
 module.exports.timestamp = timestamp; 
 module.exports.GetISODate = GetISODate; 
 module.exports.AddDays = AddDays; 
@@ -165,5 +138,5 @@ module.exports.defaultstartday = defaultstartday;
 module.exports.GetNormalDate = GetNormalDate; 
 module.exports.DateToContents = DateToContents; 
 module.exports.Choose_Answer = Choose_Answer; 
-module.exports.Determine_Period = Determine_Period; 
-module.exports.Get_ResObj = Get_ResObj;
+module.exports.Get_ResObj = Get_ResObj; 
+module.exports.Get_First_Day_of_Current_Week = Get_First_Day_of_Current_Week; 
