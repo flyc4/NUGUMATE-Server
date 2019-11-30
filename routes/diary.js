@@ -41,12 +41,19 @@ const Search_Monthly_Diary = async function(req, res) {
   let currentmonth = new Date().getMonth() + 1;
 
   //사용자 입력 값
-  const paramNuguName = req.query.nuguname;
-  const paramYear = req.query.year||currentyear; 
-  const paramMonth = req.query.month||currentmonth; 
+  const paramNuguName = req.query.nuguname||req.params.nuguname;
+  const paramYear = req.query.year||req.params.year||currentyear; 
+  let paramMonth = req.query.month||currentmonth; 
   
+  if(paramMonth*1>=13){
+    paramMonth = "01"
+  } 
+  else if(paramMonth*1<10){
+    paramMonth = "0" + paramMonth 
+  } 
+
   //입력 받은 paramYear 과 parmaMonth 를 기준으로 조회 시작/끝 날짜를 설정
-  const startdate = paramYear + "-" + paramMonth + "-" + "01";  
+  const startdate = moment(new Date(paramYear, paramMonth,0)).startOf('month').format('YYYY-MM-DD');//paramYear + "-" + paramMonth + "-" + "01";  
   const enddate = moment(startdate).endOf('month').format('YYYY-MM-DD');    
   const ISOstartdate = utils.GetISODate(startdate)
   const ISOenddate = utils.GetISODate(enddate)
@@ -67,17 +74,17 @@ const Search_Monthly_Diary = async function(req, res) {
     function(err,diaries){ 
       if(err){
         console.log("Diary/Search_Monthly_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
-      }   
-      // 조회한 일기들을 context 변수에 저장
-      let context = { Diary: [{ Date: ' ', Contents: ' '}]}
-      diaries.forEach(function(diary){
-        context.Diary.push({
-          Date: moment(diary.Date).format('YYYY-MM-DD'),
-          Contents: diary.Contents
-        })
-      })
-      context.Diary.splice(0,1); 
-      res.json(context);
+      }    
+      // 조회한 일기들을 allcontext 변수에 저장
+      //이런 형태: {"0000-01-01": {marked: true, contents: " "}, "0000-01-01": {marked: true, contents: " "} }
+        let allcontext = {}; 
+        let seperatecontext = {};
+      diaries.forEach(function(diary){ 
+        let date = moment(diary.Date).format('YYYY-MM-DD').toString();
+        seperatecontext[date] = {marked: true, contents: diary.Contents} 
+        Object.assign(allcontext,seperatecontext);
+      });
+      res.json(allcontext);
       res.end();
       return;
     }); //database.DiaryModel.find 닫기
@@ -162,34 +169,36 @@ const Save_Diary = async function(req, res) {
           console.log("Diary/Save_Diary에서 사용자 조회 불가")  
           res.json({msg: "missing"}); 
           return;
-        } 
+        }   
+        let Sentiment_Analysis=0; 
 
-        //미리 정의한 모델 불러오기 
-        let db = req.app.get('database');
-        let newdiary = db.DiaryModel({
-          NuguName: user.NuguName, 
-          Date: paramDate, 
-          Contents: paramContents
-        });  
-        
-        database.collection('diaries').findOneAndUpdate({Date: {$gte: paramDate, $lt: paramNextDate }, NuguName: newdiary.NuguName}
-          ,newdiary,{upsert: true}, async function(err){
-      
-        if(err){
-          console.log("Diary/Save_Diary에서 일기 저장 중 에러 발생: " + err.stack) 
-          res.end(); 
-          return; 
-        }     
-        res.json({msg: "completed"}); 
-        res.end(); 
-        return;
-        });  
-      });//database.collection(users).findOne 닫기  
-}//if(database) 닫기  
-  else {  
-    console.log("Diary/Search_Daily_Diary 수행 중 데이터베이스 연결 실패")
-    res.end(); 
-    return;
+              let db = req.app.get('database');
+              let newdiary = db.DiaryModel({
+                NuguName: user.NuguName, 
+                Date: paramDate, 
+                Contents: paramContents,  
+                Sentiment_Analysis: Sentiment_Analysis 
+              }); 
+              
+              database.collection('diaries').findOneAndUpdate({Date: {$gte: paramDate, $lt: paramNextDate }, NuguName: newdiary.NuguName}
+                ,newdiary,{upsert: true}, async function(err){
+                  if(err){
+                    console.log("Diary/Save_Diary에서 일기 저장 중 에러 발생: " + err.stack) 
+                    res.end(); 
+                    return; 
+                  }     
+                  res.json({msg: "completed"}); 
+                  res.end(); 
+                  return;
+              });   
+            
+         
+      });//database.collection(users).findOne 닫기 
+  }//if(database) 닫기  
+    else {  
+      console.log("Diary/Search_Daily_Diary 수행 중 데이터베이스 연결 실패")
+      res.end(); 
+      return;
   }      
 };//Save_Diary 닫기 
 
@@ -230,7 +239,43 @@ const Delete_Diary = async function(req, res) {
   }      
 };//Delete_Diary 닫기 
 
+// 테스트
+const Test = async function(req, res) {
+  console.log('Diary/Test 호출됨.');
+  await connection();  
+       
+  if (database){     
+      res.json({result: 0}); 
+      res.end(); 
+      return;   
+      /*
+      database.collection('diaries').findOneAndUpdate(
+        {
+          NuguName: paramNuguName, 
+          Date: {$gte: paramDate, $lt: paramNextDate} 
+        }, 
+        {
+          $set: {Sentiment_Analysis: 1}
+        },
+        async function(err){ 
+          if(err){
+            console.log("Diary/Test에서 일기 조회 중 에러 발생: "+ err.stack)
+          }   
+          //res.json({"msg": "completed"});
+          //res.end();
+          return;
+            }); //collection('diaries').findOneAndUpdate 닫기   
+            */
+}//if(database) 닫기  
+  else {  
+    console.log("Diary/Delete_Diary 수행 중 데이터베이스 연결 실패")
+    res.end(); 
+    return;
+  }      
+};//Test 닫기
+
 module.exports.Search_Monthly_Diary = Search_Monthly_Diary;
 module.exports.Search_Daily_Diary = Search_Daily_Diary;  
 module.exports.Save_Diary = Save_Diary;
 module.exports.Delete_Diary = Delete_Diary;  
+module.exports.Test = Test;

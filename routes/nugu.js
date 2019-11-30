@@ -104,8 +104,8 @@ const Diary_Conversation = async function(req, res) {
           switch(paramPeriod){
 
             case "오늘": 
-              sentiment = user.Daily_Analysis;  
               await Calculate_Daily_Analysis(req,res);
+              sentiment = user.Daily_Analysis;  
               break; 
 
             case "이번주": 

@@ -7,11 +7,6 @@ const serverless = require('serverless-http');
 var bodyParser = require('body-parser')
 const MongoClient = require("mongodb").MongoClient;
 
-//===== Passport 사용 =====// 
-var passport = require('passport'); 
-var flash = require('connect-flash'); 
-
-
 // 모듈로 분리한 설정 파일 불러오기
 var config = require('./config/config');
 
@@ -35,28 +30,9 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // body-parser를 이용해 application/json 파싱
 app.use(bodyParser.json())
 
-
-//===== Passport 사용 설정 =====//
-// Passport의 세션을 사용할 때는 그 전에 Express의 세션을 사용하는 코드가 있어야 함
-app.use(passport.initialize());
-app.use(passport.session()); 
-app.use(flash()); 
-
-//nodejs에서 put 과 delete 사용: http://blog.naver.com/PostView.nhn?blogId=jdub7138&logNo=221049375308&categoryNo=136&parentCategoryNo=0&viewDate=&currentPage=1&postListTopCurrentPage=1&from=postView
-
-
 //라우팅 정보를 읽어들여 라우팅 설정
 var router = express.Router();
 route_loader.init(app, router);  
-
-// 패스포트 설정
-var configPassport = require('./config/passport');
-configPassport(app, passport);
-// 패스포트 라우팅 설정
-
-//패스포트 관련 함수 라우팅 
-var userPassport = require('./routes/user_passport');
-userPassport(router, passport);     
 
 //===== 서버 시작 =====//  
 const client = new MongoClient(process.env.db_url, {

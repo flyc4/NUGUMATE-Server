@@ -14,16 +14,14 @@ module.exports = {
         {file:'./nuguname_schema', collection:'nugunames', schemaName:'NuguNameSchema', modelName:'NuguNameModel'},
         ],
 	route_info: [
-        //user 혹은 인증과 관련된 패스들
-         {file:'./user', path:'/user/checknickNm', method:'checknickNm', type:'post'} 
-        ,{file:'./user', path:'/user/getuserid', method:'getuserid', type:'post'}
         
         //diary 관련 패스들
-        ,{file:'./diary', path:'/Diary/Search_Monthly_Diary', method:'Search_Monthly_Diary', type:'get'}
+        {file:'./diary', path:'/Diary/Search_Monthly_Diary', method:'Search_Monthly_Diary', type:'get'}
         ,{file:'./diary', path:'/Diary/Search_Daily_Diary', method:'Search_Daily_Diary', type:'get'}
         ,{file:'./diary', path:'/Diary/Save_Daily_Diary', method:'Save_Diary', type:'post'}
-        ,{file:'./diary', path:'/Diary/Delete_Daily_Diary', method:'Delete_Diary', type:'post'}  
-        
+        ,{file:'./diary', path:'/Diary/Delete_Daily_Diary', method:'Delete_Diary', type:'post'}   
+        //테스트 함수 
+        ,{file:'./diary', path:'/Diary/Test', method:'Test', type:'post'}
         
         //nugu 관련 패스들  
         ,{file:'./nugu', path:'/Nugu/Assign_NuguName', method:'Assign_NuguName', type:'post'}
