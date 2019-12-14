@@ -39,7 +39,7 @@ const Assign_NuguName = async function(req, res) {
   
   if (database){       
     database.collection('nugunames').findOne({Assigned: false},
-      function(err,name){
+      async function(err,name){
         if(err){
           console.log("Nugu/Assign_NuguName에서 할당되지 않은 이름 조회 중 에러 발생: " + err.stack); 
           res.end(); 
@@ -52,7 +52,7 @@ const Assign_NuguName = async function(req, res) {
         }    
         console.log("nuguname: ", name.Name);
         database.collection('nugunames').findOneAndUpdate({_id: new ObjectId(name._id)},{$set: {Assigned: true}}, 
-        function(err){
+        async function(err){
           if(err){
             console.log("Nugu/Assign_NuguName에서 Assigned 속성 업데이트 중 에러 발생: " + err.stack); 
             res.end(); 
@@ -74,81 +74,91 @@ const Assign_NuguName = async function(req, res) {
 
 //specifications: Server-Answer Data-Choose_and_Send_Answer
 const Diary_Conversation = async function(req, res) {
-    console.log('Nugu/Diary_Conversation 호출됨.');
-    await connection();  
-    
-    //사용자 입력 값 
-    console.log("Received parameters: ")
-    console.log(req.body.action.parameters);
-    const paramNuguName = req.body.action.parameters.NuguName.value;
-    const paramPeriod = req.body.action.parameters.Period.value;    
+  console.log('Nugu/Diary_Conversation 호출됨.');
+  await connection();  
   
-    if (database){       
-      database.collection('users').findOne({NuguName: paramNuguName},
-        async function(err,user){
-          if(err){
-            console.log("Nugu/Diary_Conversation에서 사용자 조회 중 에러 발생: " + err.stack) 
-            res.end(); 
-            return;
-          }  
-          if(!user){
-            console.log("Nugu/Diary_Conversation에서 사용자 조회 불가")  
-            res.end(); 
-            return;
-          }    
+  //사용자 입력 값 
+  console.log("Received parameters: ")
+  console.log(req.body.action.parameters);
+  const paramNuguName = req.body.action.parameters.NuguName.value;
+  const paramPeriod = req.body.action.parameters.Period.value;    
+  req.body.nuguname = paramNuguName;
 
-          //Choose_Answer의 대상이 되는 period 와 그에 따른 sentiment 
-          let sentiment = -1;
-          req.body.nuguname = paramNuguName; 
-          
-          switch(paramPeriod){
+  if (database){       
+    //이 switch를 비동기 함수로 하나 만들어야 함.
+    switch(paramPeriod){
 
-            case "오늘": 
-              await Calculate_Daily_Analysis(req,res);
-              sentiment = user.Daily_Analysis;  
-              break; 
+      case "오늘":         
+        await Calculate_Daily_Analysis(req,res);  
+        break; 
 
-            case "이번주": 
-
-              req.body.startdate = utils.Get_First_Day_of_Current_Week(new Date());      
-              await Calculate_Weekly_Analysis(req,res);
-              sentiment = user.Weekly_Analysis; 
-              break;
-            
-            case "이번달": 
-              
-              req.body.year = new Date().getFullYear();
-              req.body.month = new Date().getMonth() + 1;
-              await Calculate_Monthly_Analysis(req,res);
-              sentiment = user.Monthly_Analysis; 
-              break; 
-            
-            default: 
-              sentiment = -1; 
-              break;
-          }
-
-          let resobj = utils.Get_ResObj(); 
-          
-          console.log("user.Daily_Analysis: ",user.Daily_Analysis);
-          console.log("sentiment: ", sentiment); 
-
-          resobj.version = req.body.version;  
-          resobj.output.Answer = utils.Choose_Answer(paramPeriod,sentiment);  
-          console.log("Response object")
-          console.log(resobj);
-          res.json(resobj);
-          res.end();
-          return;
-        });//collection('users').findOne 닫기  
-      }//if(database) 닫기  
-    
-      else {  
-          console.log("Nugu/Diary_Conversation 수행 중 데이터베이스 연결 실패")
+      case "이번주":       
+        await Calculate_Weekly_Analysis(req,res);  
+        break;
+      
+      case "이번달": 
+        req.body.year = new Date().getFullYear();
+        req.body.month = new Date().getMonth() + 1;
+        await Calculate_Monthly_Analysis(req,res);  
+        break; 
+      
+      default: 
+        break;
+    } 
+    await Calculate_Daily_Analysis(req,res); 
+    database.collection('users').findOne({NuguName: paramNuguName},
+      async function(err,user){
+        if(err){
+          console.log("Nugu/Diary_Conversation에서 사용자 조회 중 에러 발생: " + err.stack) 
           res.end(); 
           return;
-      }      
-  };//Diary_Conversation 닫기   
+        }  
+        if(!user){
+          console.log("Nugu/Diary_Conversation에서 사용자 조회 불가")  
+          res.end(); 
+          return;
+        }       
+        let sentiment = 1;  
+        //Choose_Answer의 대상이 되는 period 와 그에 따른 sentiment 
+        switch(paramPeriod){
+
+          case "오늘":         
+            sentiment = user.Daily_Analysis; 
+            break; 
+  
+          case "이번주":       
+          sentiment = user.Weekly_Analysis;   
+            break;
+          
+          case "이번달": 
+          sentiment = user.Monthly_Analysis; 
+            break; 
+          
+          default: 
+            break;
+        }
+        
+        let resobj = utils.Get_ResObj(); 
+        
+        console.log("user.Daily_Analysis: ",user.Daily_Analysis);
+        console.log("sentiment: ", sentiment); 
+
+        resobj.version = req.body.version;  
+        resobj.output.Answer = utils.Choose_Answer(paramPeriod,sentiment);  
+        console.log("Response object")
+        console.log(resobj);
+        res.json(resobj);
+        res.end();
+        return;
+      });//collection('users').findOne 닫기  
+    }//if(database) 닫기  
+  
+    else {  
+        console.log("Nugu/Diary_Conversation 수행 중 데이터베이스 연결 실패")
+        res.end(); 
+        return;
+    }      
+};//Diary_Conversation 닫기
 
   const Calculate_Daily_Analysis = async function(req, res){
 
@@ -175,17 +185,25 @@ const Diary_Conversation = async function(req, res) {
 
             if(!diary){
               console.log("Nugu/Calculate_Daily_Analysis에서 오늘 작성한 일기 조회 불가"); 
-              res.end(); 
-              return;
+              database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Daily_Analysis: -1}}, async function(err){
+                if(err){
+                  console.log("Nugu/Calculate_Daily_Analysis에서 사용자 정보 -1 업데이트 중 에러 발생: " + err.stack); 
+                  res.end();
+                  return;
+                }  
+              });//collection('users').updateOne 닫기     
+              return ;
             }
             console.log("diary.Sentiment_Analysis: ",diary.Sentiment_Analysis);
             //계산한 값을 users table에 업데이트 
-            database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Daily_Analysis: diary.Sentiment_Analysis}}, function(err){
+            database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Daily_Analysis: diary.Sentiment_Analysis}}, async function(err){
               if(err){
                 console.log("Nugu/Calculate_Daily_Analysis에서 사용자 업데이트 중 에러 발생: " + err.stack); 
                 res.end();
                 return;
-              }   
+              } 
+              console.log("Calculate_Daily_Analysis 마침")
+              return;   
             });//collection('users').updateOne 닫기
           });//collection('diaries').find 닫기
         } 
@@ -241,7 +259,7 @@ const Diary_Conversation = async function(req, res) {
             weekly_analysis = weekly_analysis/(diaries.length-dummy_count); 
             
             //계산한 값을 users table에 업데이트 
-            database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Weekly_Analysis: weekly_analysis}}, function(err){
+            database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Weekly_Analysis: weekly_analysis}}, async function(err){
               if(err){
                 console.log("Nugu/Calculate_Weekly_Analysis에서 사용자 업데이트 중 에러 발생: " + err.stack); 
                 res.end();
@@ -286,7 +304,7 @@ const Diary_Conversation = async function(req, res) {
           NuguName: paramNuguName, 
           Date: {$gte: ISOstartdate, $lte: ISOenddate} 
         }).toArray(
-        function(err,diaries){ 
+        async function(err,diaries){ 
           if(err){
             console.log("Nugu/Search_Monthly_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
           }  
@@ -308,7 +326,7 @@ const Diary_Conversation = async function(req, res) {
           monthly_analysis = monthly_analysis/(diaries.length-dummy_count); 
           console.log("monthly_analysis: ",monthly_analysis)
           //계산한 값을 users table에 업데이트 
-          database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Monthly_Analysis: monthly_analysis}}, function(err){
+          database.collection('users').updateOne({NuguName: paramNuguName}, { $set: {Monthly_Analysis: monthly_analysis}}, async function(err){
             if(err){
               console.log("Nugu/Calculate_Monthly_Analysis에서 사용자 업데이트 중 에러 발생: " + err.stack); 
               res.end();
@@ -322,7 +340,35 @@ const Diary_Conversation = async function(req, res) {
         res.end(); 
         return;
       } 
-  };//Calculate_Monthly_Analysis 닫기
+  };//Calculate_Monthly_Analysis 닫기 
+
+  // 입력 값을 그대로 반환하는 비동기 함수
+  const echo = async function(input){
+    return input;
+  }; 
+
+  //switch 함수를 비동기로  
+  const switches = async function(paramPeriod, anal){
+    
+    switch(paramPeriod){
+
+      case "오늘":         
+        return await echo(user.Daily_Analysis); 
+        break; 
+
+      case "이번주":       
+        return await echo(user.Weekly_Analysis);   
+        break;
+      
+      case "이번달": 
+      sentiment = await echo(user.Monthly_Analysis); 
+        break; 
+      
+      default: 
+        break;
+    }
+  
+}
 
 module.exports.Assign_NuguName = Assign_NuguName;  
 module.exports.Diary_Conversation = Diary_Conversation; 

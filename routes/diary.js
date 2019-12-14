@@ -142,7 +142,6 @@ const Search_Daily_Diary = async function(req, res) {
   }      
 };//Search_Daily_Diary 닫기
 
-// 일간 일기 upsert
 const Save_Diary = async function(req, res) {
   console.log('Diary/Save_Diary 호출됨.');
   await connection();
@@ -170,7 +169,11 @@ const Save_Diary = async function(req, res) {
           res.json({msg: "missing"}); 
           return;
         }   
-        let Sentiment_Analysis=0; 
+        let Sentiment_Analysis=0;  
+        axios.post(process.env.model_url + '/Get_Diary', {_id: user._id, Contents: paramContents}) 
+          .then((response) => {       
+              Sentiment_Analysis = response.data.result; 
+              console.log("result: ",Sentiment_Analysis);
 
               let db = req.app.get('database');
               let newdiary = db.DiaryModel({
@@ -191,8 +194,11 @@ const Save_Diary = async function(req, res) {
                   res.end(); 
                   return;
               });   
-            
-         
+            })// axios 닫기 
+          .catch(( err ) => {
+            console.log("Diary/Save_Daily_Diary에서 Sentiment_Analysis 요청 중 에러 발생: " + err.stack); 
+            return; 
+          });
       });//database.collection(users).findOne 닫기 
   }//if(database) 닫기  
     else {  
@@ -200,7 +206,8 @@ const Save_Diary = async function(req, res) {
       res.end(); 
       return;
   }      
-};//Save_Diary 닫기 
+   
+};//Save_Diary 닫기    
 
 // 일간 일기 삭제
 const Delete_Diary = async function(req, res) {
@@ -225,7 +232,9 @@ const Delete_Diary = async function(req, res) {
         },
         async function(err){ 
           if(err){
-            console.log("Diary/Delete_Diary에서 일기 조회 중 에러 발생: "+ err.stack)
+            console.log("Diary/Delete_Diary에서 일기 조회 중 에러 발생: "+ err.stack); 
+            res.end(); 
+            return;
           }   
           res.json({"msg": "completed"});
           res.end();
@@ -239,43 +248,7 @@ const Delete_Diary = async function(req, res) {
   }      
 };//Delete_Diary 닫기 
 
-// 테스트
-const Test = async function(req, res) {
-  console.log('Diary/Test 호출됨.');
-  await connection();  
-       
-  if (database){     
-      res.json({result: 0}); 
-      res.end(); 
-      return;   
-      /*
-      database.collection('diaries').findOneAndUpdate(
-        {
-          NuguName: paramNuguName, 
-          Date: {$gte: paramDate, $lt: paramNextDate} 
-        }, 
-        {
-          $set: {Sentiment_Analysis: 1}
-        },
-        async function(err){ 
-          if(err){
-            console.log("Diary/Test에서 일기 조회 중 에러 발생: "+ err.stack)
-          }   
-          //res.json({"msg": "completed"});
-          //res.end();
-          return;
-            }); //collection('diaries').findOneAndUpdate 닫기   
-            */
-}//if(database) 닫기  
-  else {  
-    console.log("Diary/Delete_Diary 수행 중 데이터베이스 연결 실패")
-    res.end(); 
-    return;
-  }      
-};//Test 닫기
-
 module.exports.Search_Monthly_Diary = Search_Monthly_Diary;
 module.exports.Search_Daily_Diary = Search_Daily_Diary;  
 module.exports.Save_Diary = Save_Diary;
 module.exports.Delete_Diary = Delete_Diary;  
-module.exports.Test = Test;
