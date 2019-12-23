@@ -32,8 +32,11 @@ const Answers_For_Negative_Sentiment_Period = [
  
  const Answers_For_No_Sentiment = [
   "흠.. 그냥 그랬어요. 일기를 통해서 주인님을 좀 더 알고 싶어요."
- ];
+ ]; 
 
+//1220 SKT 용
+const Answer_For_Negative = "네. 안녕하세요. 잘 지내셨나요? 이번 주에는 많이 힘드셨던 것 같아요. 힘들어하시는 모습을 보니까 저도 마음이 많이 아프네요. 오늘 하루는 어떠셨나요?";
+const Answer_For_Positive = "네. 안녕하세요. 잘 지내셨나요? 이번 주에는 기분 좋은 일이 많으셨나 봐요. 이 기분 그대로 오늘 하루를 마무리하도록 해요. 오늘 하루는 어떠셨나요?"; 
 
 //YYYY-MM-DD 형식의 날짜 파일을 ISO 형식으로 반환
 const GetISODate = function(Data){
@@ -45,6 +48,24 @@ const GenerateRandomNumber = function(min,max){
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
+
+//"나비야" 에 대한 대답
+const First_Answer = async function(sentiment){
+
+  //sentiment 값이 없다면 바로 return 
+  if(sentiment===-1){
+    return Answers_For_No_Sentiment[0];
+  }  
+  else{
+      if(sentiment >= 0.5){ 
+        return Answer_For_Positive; 
+      } 
+
+      else{ 
+        return Answer_For_Negative; 
+      }
+    } 
+};
 
 //Server-Answer Data-Send\_Answers 에서 choose의 과정 
 //period: 일간, 주간/월간 대화 중 무엇인지 식별. (daily, period)
@@ -84,7 +105,9 @@ const Choose_Answer = function(period,sentiment){
       }//주간,월간 대화 & 부정 감정 끝 
     }//주간, 월간 끝
   }//sentiment != -1
-};
+}; 
+
+
 
 const Get_ResObj = function(){
   let resobj = {
@@ -105,6 +128,7 @@ const Get_First_Day_of_Current_Week = function(date){
 };
 
 module.exports.GetISODate = GetISODate; 
+module.exports.First_Answer = First_Answer;
 module.exports.Choose_Answer = Choose_Answer; 
 module.exports.Get_ResObj = Get_ResObj; 
 module.exports.Get_First_Day_of_Current_Week = Get_First_Day_of_Current_Week; 

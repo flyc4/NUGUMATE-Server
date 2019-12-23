@@ -23,11 +23,9 @@ module.exports = {
         
         //nugu 관련 패스들  
         ,{file:'./nugu', path:'/Nugu/Assign_NuguName', method:'Assign_NuguName', type:'post'}
-        ,{file:'./nugu', path:'/Nugu/Diary_Conversation', method:'Diary_Conversation', type:'post'}  
-        ,{file:'./nugu', path:'/Nugu/Calculate_Daily_Analysis', method:'Calculate_Daily_Analysis', type:'post'}
-        ,{file:'./nugu', path:'/Nugu/Calculate_Weekly_Analysis', method:'Calculate_Weekly_Analysis', type:'post'}
-        ,{file:'./nugu', path:'/Nugu/Calculate_Monthly_Analysis', method:'Calculate_Monthly_Analysis', type:'post'}
-
+        //,{file:'./nugu', path:'/Nugu/Diary_Conversation', method:'Diary_Conversation', type:'post'}  
+        ,{file:'./nugu', path:'/Nugu/First_Answer', method:'First_Answer', type:'post'}
+        ,{file:'./nugu', path:'/Nugu/Second_Answer', method:'Second_Answer', type:'post'}
 
 ],      
 };  

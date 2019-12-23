@@ -178,8 +178,7 @@ const Save_Diary = async function(req, res) {
               let db = req.app.get('database');
               let newdiary = db.DiaryModel({
                 NuguName: user.NuguName, 
-                Date: paramDate, 
-                Contents: paramContents,  
+                Date: paramDate,  
                 Sentiment_Analysis: Sentiment_Analysis 
               }); 
               
@@ -206,7 +205,6 @@ const Save_Diary = async function(req, res) {
       res.end(); 
       return;
   }      
-   
 };//Save_Diary 닫기    
 
 // 일간 일기 삭제
